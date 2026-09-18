@@ -7,10 +7,15 @@ rather than running the full upload pipeline, to keep this a fast unit test of
 the endpoint/schema layer (not an integration test of the ML pipeline, which
 is exercised manually/ad-hoc against dataset/ per PLAN.md's 검증 범위).
 """
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.storage import AlbumRecord, PhotoRecord, store
+
+DATASET_DIR = Path(__file__).resolve().parent.parent.parent / "dataset"
+REAL_SAMPLE_PHOTO = DATASET_DIR / "IMG_9322.jpeg"
 
 
 def _reset_store():
@@ -100,6 +105,30 @@ def test_list_photos_unknown_album_is_400():
     client = TestClient(app)
     resp = client.get("/api/photos", params={"album_id": "nope"})
     assert resp.status_code == 400
+
+
+def test_get_photo_image_serves_real_bytes():
+    """CONTRACT.md 3장: image_url은 실제 이미지 바이트를 내려주는 정적 경로여야 함.
+    목업이 아니라 dataset/의 실제 JPEG 파일을 그대로 서빙하는지 바이트 단위로 확인."""
+    _reset_store()
+    store.add_photo(
+        PhotoRecord(
+            photo_id="photo-img", filename="IMG_9322.jpeg", file_path=REAL_SAMPLE_PHOTO, album_id="album-1",
+        )
+    )
+
+    client = TestClient(app)
+    resp = client.get("/api/photos/photo-img/image")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "image/jpeg"
+    assert resp.content == REAL_SAMPLE_PHOTO.read_bytes()
+
+
+def test_get_photo_image_unknown_id_is_404():
+    _reset_store()
+    client = TestClient(app)
+    resp = client.get("/api/photos/does-not-exist/image")
+    assert resp.status_code == 404
 
 
 def test_get_albums_schema():

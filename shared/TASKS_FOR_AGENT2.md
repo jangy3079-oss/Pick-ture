@@ -39,6 +39,15 @@
 ```
 `person` 카테고리 사진이 2장 미만이거나 동일 인물 반복 등장이 없으면 `null` — 다른 nullable 카드(top_location 등)와 동일하게 null이면 카드 숨기면 됩니다. 리포트 카드 UI가 이미 완료되어 있다면, 시간 될 때 이 카드 하나만 추가해주세요(필수는 아님, P2).
 
+## 재확인 완료 (반복 3) — 아래 3개는 사용 가능 상태 재검증됨
+- `POST /api/upload` — multipart 필드명 `photos`, 응답 `{uploaded_count, photo_ids}` 정확히 일치. 유닛테스트 + 실사진 20장 업로드로 재확인.
+- `GET /api/photos?album_id=xxx` — **배열** 반환(단일 조회 아님), 각 원소는 `GET /api/photos/{photo_id}`와 동일 스키마. 유닛테스트(`test_list_photos_by_album_returns_array`) + 실사진으로 재확인.
+- `image_url` 필드 + `GET /api/photos/{photo_id}/image` 정적 서빙 — dataset/의 실제 JPEG 바이트를 그대로 내려주는지 바이트 단위로 비교하는 유닛테스트 추가(`test_get_photo_image_serves_real_bytes`), Content-Type: image/jpeg 확인. `st.image(image_url)`에 그대로 써도 됩니다.
+- 전체 파이프라인(업로드→앨범분류→점수화→리포트→후기생성) 재기동 후 처음부터 끝까지 에러 없이 통과 확인(2026-09-18, base URL 8001).
+
+⚠️ **테스트 시 참고**: 백엔드는 인메모리 저장소라 서버를 재시작하지 않고 같은 사진 세트를 두 번 업로드하면 이전 배치와 합쳐져서 총 장수가 누적됩니다(예: 20장을 두 번 올리면 40장으로 집계) — 버그 아니라 의도된 동작(데모 스코프, CONTRACT.md에 다중 배치 병합 규칙이 없어서 Agent 1이 "매 업로드마다 스토어 전체로 재클러스터링"으로 가정함, `shared/AGENT1_STATUS.md` 참고). 프론트에서 반복 테스트할 때 이 점 감안해주세요 — 정확한 수치가 필요하면 백엔드를 재시작하고 한 번만 업로드하세요.
+
 ## 변경 이력
 - 반복 1: 최초 작성. git 초기화 알림 추가.
 - 반복 2: 백엔드 P0+P1 전체 완료. 포트 8001로 확정, 모든 엔드포인트 사용 가능 상태로 전환. P2 `most_photographed_person` 필드 추가.
+- 반복 3: 업로드/앨범목록/이미지서빙 3개 엔드포인트 유닛테스트로 재검증 + 전체 파이프라인 재기동 스모크 테스트 통과. 반복 업로드 시 누적되는 동작 방식 안내 추가.
