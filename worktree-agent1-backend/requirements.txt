@@ -1,0 +1,16 @@
+# mediapipe pinned to 0.10.35: 1.0.1 crashes (SIGABRT, unrecoverable) on this
+# macOS arm64 environment when running FaceDetector/FaceLandmarker — see
+# shared/AGENT1_STATUS.md "해결한 이슈" and google-ai-edge/mediapipe#6356.
+mediapipe==0.10.35
+simple-aesthetics-predictor
+open-clip-torch
+imagededup
+opencv-python
+fastapi
+uvicorn
+anthropic
+python-dotenv
+pillow
+reverse-geocode
+transformers
+torch

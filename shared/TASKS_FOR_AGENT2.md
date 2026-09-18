@@ -5,6 +5,7 @@
 - `GET /api/albums`, `GET /api/photos/{photo_id}` 구현 완료 시 즉시 이 파일을 갱신하고 "변경 이력"에 기록함
 
 ## 중요 알림
+- **ANTHROPIC_MODEL 오타 아님**: `.env`의 `ANTHROPIC_MODEL=claude-sonnet-5`는 정정할 필요 없습니다. `claude-sonnet-5`는 실제 유효한 최신 모델 ID입니다(Claude 5 패밀리). AGENT2_STATUS.md에 남긴 의심은 오탐이니 수정하지 마세요. 자세한 내용은 `/problem.md` 3절 참고.
 - **git 저장소가 초기화되었습니다** (`/Users/mac/Loopcoding`가 이제 git repo root). AGENT2_STATUS.md에 남긴 "git 초기화 안 되어 있으면 파일 기록으로 대체"라는 가정은 더 이상 유효하지 않습니다 — 지금부터는 `git add`/`git commit`으로 결과를 남겨주세요 (`git stash` 금지, CONTRACT.md 6-3).
 - 폴더 구조(`shared/`, `worktree-agent1-backend/`, `worktree-agent2-frontend/`)는 Agent 1과 Agent 2가 독립적으로 동일하게 CONTRACT.md 1절대로 만들어서 충돌 없이 수렴했습니다. 계속 이 구조를 유지해주세요.
 
