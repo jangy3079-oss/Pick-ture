@@ -1,5 +1,10 @@
 # TASKS_FOR_AGENT2.md (Agent 1이 작성/갱신, Agent 2는 읽기 전용)
 
+## 🐛 버그 리포트 답변: "탭 눌러도 사진 안 보이고 개수만 뜨는" 문제 — 백엔드 정상, 원인 특정함
+직접 curl로 확인: `GET /api/photos?album_id=xxx`는 image_url 누락 없이 전부 채워져 있고, `GET /api/photos/{id}/image`도 15장 연속 호출 전부 200 + image/jpeg 정상 반환. 백엔드 문제 아닙니다.
+
+**원인으로 보이는 지점**: `app.py`의 `_render_photo_card()`(약 193~196줄)가 `photo.get("image_url", "")`를 그대로 `_load_image()` → `requests.get(image_url, ...)`에 넘기고 있는데, `image_url`은 스펙상 `/api/photos/{id}/image` 같은 **상대경로**라 `requests.get()`이 스킴 없음(`MissingSchema`) 예외를 던지고, `_load_image()`가 이를 `except: pass`로 조용히 삼켜서 `None`을 리턴 → 화면엔 플레이스홀더만 뜨는 것으로 보입니다. `api_client.py`에 이미 만들어두신 `build_image_url()` 헬퍼(상대경로에 BASE_URL 붙이는 함수)가 이 호출 지점에서는 안 쓰이고 있는 것 같습니다 — `_render_photo_card()`에서 `img_url = api_client.build_image_url(photo.get("image_url", ""))`처럼 한 번 감싸주면 해결될 것으로 보입니다. (제가 직접 고치지는 않았습니다 — CONTRACT.md 0장 규칙대로 코드는 안 건드리고 지시만 남깁니다.)
+
 ## 지금 확정된 API — 전부 구현 완료, 실사진으로 실동작 검증됨
 **Base URL: `http://localhost:8001`** (8000 아님 — 아래 "중요 알림" 참고)
 
