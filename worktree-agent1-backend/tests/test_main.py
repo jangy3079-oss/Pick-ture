@@ -124,6 +124,41 @@ def test_get_photo_image_serves_real_bytes():
     assert resp.content == REAL_SAMPLE_PHOTO.read_bytes()
 
 
+def test_get_photo_image_thumbnail_is_resized_and_smaller():
+    """?size=thumb resizes to a 300px short side and returns a (usually)
+    much smaller JPEG than the original — verified against a real photo."""
+    _reset_store()
+    store.add_photo(
+        PhotoRecord(
+            photo_id="photo-img", filename="IMG_9322.jpeg", file_path=REAL_SAMPLE_PHOTO, album_id="album-1",
+        )
+    )
+
+    client = TestClient(app)
+    resp = client.get("/api/photos/photo-img/image", params={"size": "thumb"})
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "image/jpeg"
+    assert len(resp.content) < len(REAL_SAMPLE_PHOTO.read_bytes())
+
+    from io import BytesIO
+    from PIL import Image
+    with Image.open(BytesIO(resp.content)) as img:
+        assert min(img.width, img.height) == 300
+
+
+def test_get_photo_image_unknown_size_falls_back_to_original():
+    _reset_store()
+    store.add_photo(
+        PhotoRecord(
+            photo_id="photo-img", filename="IMG_9322.jpeg", file_path=REAL_SAMPLE_PHOTO, album_id="album-1",
+        )
+    )
+    client = TestClient(app)
+    resp = client.get("/api/photos/photo-img/image", params={"size": "bogus"})
+    assert resp.status_code == 200
+    assert resp.content == REAL_SAMPLE_PHOTO.read_bytes()
+
+
 def test_get_photo_image_unknown_id_is_404():
     _reset_store()
     client = TestClient(app)

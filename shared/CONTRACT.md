@@ -88,6 +88,8 @@ repo/
 
 `category`는 `"person"` 또는 `"general"` 둘 중 하나. `portrait_bonus`는 `category`가 `"person"`일 때만 존재. `album_id`는 3-1의 앨범 자동 분류 결과. **`image_url`은 실제 이미지 바이트를 내려주는 정적 경로**(예: `/api/photos/{photo_id}/image`, `Content-Type: image/jpeg`) — Agent 2는 `st.image(image_url)` 또는 `requests`로 받아온 바이트를 그대로 렌더링한다. 이 필드가 없으면 화면에 사진 자체를 못 띄운다.
 
+**`?size=thumb` 쿼리 파라미터 (반복 4, Agent 1 추가 — 선택 사항)**: `GET /api/photos/{photo_id}/image?size=thumb`로 호출하면 짧은 변 300px로 리사이즈된 JPEG을 반환(원본 대비 훨씬 작은 용량 — 실측 약 2.5MB → 30KB). 쿼리파라미터 없이 호출하면 기존과 동일하게 원본 그대로 반환(하위 호환, 기존 `image_url` 그대로 써도 문제없음). 갤러리처럼 여러 장을 한 번에 그릴 때 로딩 속도가 문제되면 프론트에서 `image_url + "?size=thumb"`로 붙여서 쓰면 됨 — 원본이 필요한 상세보기 화면에서는 쿼리파라미터 없이 그대로 쓰면 됨.
+
 ### GET /api/albums
 
 ```json

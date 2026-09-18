@@ -4,12 +4,17 @@ server-side via `requests` (CONTRACT.md 0-1), so no browser CORS is involved.
 """
 from __future__ import annotations
 
+import io
 import mimetypes
 import uuid
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
+from PIL import Image
+
+THUMBNAIL_SHORT_SIDE = 300
 
 from app import albums as albums_module
 from app import face_clustering, generate_post as generate_post_module
@@ -149,9 +154,28 @@ def generate_post(request: GeneratePostRequest) -> GeneratePostResponse:
 
 
 @app.get("/api/photos/{photo_id}/image")
-def get_photo_image(photo_id: str) -> FileResponse:
+def get_photo_image(photo_id: str, size: Optional[str] = None):
+    """CONTRACT.md 3장: image_url이 가리키는 정적 이미지 바이트.
+
+    Assumption (not in original CONTRACT.md — added per human request, see
+    CONTRACT.md changelog): optional `?size=thumb` query param returns a
+    resized JPEG (short side 300px) for faster gallery loading; any other
+    value or omitted defaults to the original full-resolution file, so
+    existing callers (image_url with no query string) are unaffected.
+    """
     record = store.get_photo(photo_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Unknown photo_id")
+
+    if size == "thumb":
+        with Image.open(record.file_path) as img:
+            img = img.convert("RGB")
+            ratio = THUMBNAIL_SHORT_SIDE / min(img.width, img.height)
+            new_size = (round(img.width * ratio), round(img.height * ratio))
+            thumb = img.resize(new_size, Image.LANCZOS)
+            buffer = io.BytesIO()
+            thumb.save(buffer, format="JPEG", quality=85)
+            return Response(content=buffer.getvalue(), media_type="image/jpeg")
+
     media_type = mimetypes.guess_type(str(record.file_path))[0] or "image/jpeg"
     return FileResponse(record.file_path, media_type=media_type)
