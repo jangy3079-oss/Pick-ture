@@ -32,6 +32,7 @@ class PhotoRecord:
     gps: Optional[tuple[float, float]] = None  # (lat, lon)
     country: Optional[str] = None
     city: Optional[str] = None
+    content_hash: Optional[str] = None  # sha256 of raw bytes, for re-upload dedup
 
 
 @dataclass
@@ -49,13 +50,23 @@ class Store:
         self._lock = threading.Lock()
         self.photos: dict[str, PhotoRecord] = {}
         self.albums: dict[str, AlbumRecord] = {}
+        self._hash_to_photo_id: dict[str, str] = {}
 
     def add_photo(self, record: PhotoRecord) -> None:
         with self._lock:
             self.photos[record.photo_id] = record
+            if record.content_hash:
+                self._hash_to_photo_id[record.content_hash] = record.photo_id
 
     def get_photo(self, photo_id: str) -> Optional[PhotoRecord]:
         return self.photos.get(photo_id)
+
+    def find_by_content_hash(self, content_hash: str) -> Optional[PhotoRecord]:
+        """Used by POST /api/upload to skip re-processing an exact re-upload
+        (same bytes) of a photo that's already in the store — prevents the
+        same file from accumulating multiple photo_ids across upload calls."""
+        photo_id = self._hash_to_photo_id.get(content_hash)
+        return self.photos.get(photo_id) if photo_id else None
 
     def photos_in_album(self, album_id: str) -> list[PhotoRecord]:
         return [p for p in self.photos.values() if p.album_id == album_id]

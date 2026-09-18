@@ -4,6 +4,7 @@ server-side via `requests` (CONTRACT.md 0-1), so no browser CORS is involved.
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import mimetypes
 import uuid
@@ -57,14 +58,26 @@ async def upload_photos(photos: list[UploadFile]) -> UploadResponse:
     if not photos:
         raise HTTPException(status_code=400, detail="No photos provided")
 
+    result_photo_ids: list[str] = []
     new_records: list[PhotoRecord] = []
     new_paths: dict[str, Path] = {}
 
     for upload in photos:
+        content = await upload.read()
+        content_hash = hashlib.sha256(content).hexdigest()
+
+        # Assumption (per human request, iteration 4): re-uploading the exact
+        # same file bytes (e.g. clicking upload twice on the same batch,
+        # since the store never expires) must not create a second photo_id —
+        # reuse the existing one and skip re-running the ML pipeline for it.
+        existing = store.find_by_content_hash(content_hash)
+        if existing is not None:
+            result_photo_ids.append(existing.photo_id)
+            continue
+
         photo_id = str(uuid.uuid4())
         suffix = Path(upload.filename or "").suffix or ".jpg"
         dest = IMAGES_DIR / f"{photo_id}{suffix}"
-        content = await upload.read()
         dest.write_bytes(content)
 
         taken_at, gps = extract_datetime_and_gps(dest)
@@ -74,36 +87,39 @@ async def upload_photos(photos: list[UploadFile]) -> UploadResponse:
             file_path=dest,
             taken_at=taken_at.isoformat() if taken_at else None,
             gps=gps,
+            content_hash=content_hash,
         )
         record.is_blurry = preprocessing.is_blurry(dest)
         new_records.append(record)
         new_paths[photo_id] = dest
+        result_photo_ids.append(photo_id)
 
-    dup_groups = preprocessing.find_duplicate_groups(new_paths)
-    for record in new_records:
-        record.duplicate_group_id = dup_groups.get(record.photo_id)
+    if new_records:
+        dup_groups = preprocessing.find_duplicate_groups(new_paths)
+        for record in new_records:
+            record.duplicate_group_id = dup_groups.get(record.photo_id)
 
-    for record in new_records:
-        face_count, portrait_bonus = vision.analyze_faces(record.file_path)
-        record.face_count = face_count
-        record.category = "person" if face_count >= 1 else "general"
-        record.portrait_bonus = portrait_bonus if record.category == "person" else None
-        record.aesthetic_score = round(vision.aesthetic_score(record.file_path), 4)
-        record.zero_shot_tags = vision.zero_shot_tags(record.file_path)
-        store.add_photo(record)
+        for record in new_records:
+            face_count, portrait_bonus = vision.analyze_faces(record.file_path)
+            record.face_count = face_count
+            record.category = "person" if face_count >= 1 else "general"
+            record.portrait_bonus = portrait_bonus if record.category == "person" else None
+            record.aesthetic_score = round(vision.aesthetic_score(record.file_path), 4)
+            record.zero_shot_tags = vision.zero_shot_tags(record.file_path)
+            store.add_photo(record)
 
-    # Assumption (documented in shared/AGENT1_STATUS.md): album classification
-    # re-runs over ALL photos currently in the store on every upload call, so
-    # album_ids can change across upload batches. CONTRACT.md's flow is a
-    # single upload followed immediately by album/photo queries, which this
-    # handles correctly; multi-batch merging semantics are undefined there.
-    all_photos = list(store.photos.values())
-    new_albums = albums_module.classify_albums(all_photos)
-    store.set_albums(new_albums)
+        # Assumption (documented in shared/AGENT1_STATUS.md): album classification
+        # re-runs over ALL photos currently in the store whenever new photos are
+        # added, so album_ids can change across upload batches that add new
+        # content. A batch that's entirely re-uploads (no new_records) skips
+        # this, so existing album_ids stay stable.
+        all_photos = list(store.photos.values())
+        new_albums = albums_module.classify_albums(all_photos)
+        store.set_albums(new_albums)
 
     return UploadResponse(
-        uploaded_count=len(new_records),
-        photo_ids=[r.photo_id for r in new_records],
+        uploaded_count=len(result_photo_ids),
+        photo_ids=result_photo_ids,
     )
 
 

@@ -1,0 +1,12 @@
+# 화이트 미니멀 테마 (2026-09-18, 사람 요청). 정확한 색상 수치는 지정되지 않아
+# 절제된 단색 포인트(짙은 남색)로 합리적인 기본값을 정해 적용함.
+[theme]
+base = "light"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#FAFAFA"
+textColor = "#1A1A1A"
+primaryColor = "#1E293B"
+font = "sans serif"
+
+[server]
+runOnSave = true

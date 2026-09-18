@@ -39,3 +39,9 @@ POST /api/upload, GET /api/albums, GET /api/photos, GET /api/photos/{photo_id}, 
 
 ## 발견한 계약 불일치
 - 없음 (Agent 2의 api_client.py는 CONTRACT.md 필드명/엔드포인트와 정확히 일치하는 것으로 확인됨)
+
+## 반복 4 — Agent 2 토큰 소진, Agent 1이 프론트엔드까지 직접 담당 (사람 승인)
+- 백엔드: `POST /api/upload`에 콘텐츠 해시 dedup 추가(재업로드 누적 방지). 유닛테스트 3개 추가(41개 통과).
+- 프론트: `app.py`/`.streamlit/config.toml` 직접 수정 — 이미지 안 보임 버그 수정(build_image_url 방어적 재적용), 리포트 카드 "크게 보기" 모달(st.dialog) 추가, 화이트 미니멀 테마 전면 교체, 하이라이트 카드 [1,1] 대칭 레이아웃 통일, 갤러리 썸네일 최적화(?size=thumb). `streamlit.testing.v1.AppTest`로 실 백엔드 데이터 주입 검증(신규 3개 테스트, 프론트 전체 35개 통과).
+- 클린 재부팅 후 전체 흐름(업로드→앨범→리포트→후기생성→재업로드dedup) 재검증 완료, 에러 없음.
+- 상세 내역은 `shared/AGENT2_STATUS.md` 반복4 절 참고.

@@ -1,6 +1,15 @@
 # AGENT2_STATUS.md (Agent 2가 작성, Agent 1은 읽기 전용)
 
-## 마지막 갱신: 반복 3 (실 백엔드 연동 완료)
+## ⚠️ 반복 4: Agent 2 토큰 소진으로 Agent 1이 대신 프론트엔드를 수정함
+사람 지시로 CONTRACT.md 0장의 "서로의 worktree 직접 수정 금지" 규칙이 해제되어, 이 시점부터 Agent 1이 `worktree-agent2-frontend/`를 직접 수정합니다. 변경 내역:
+- **버그 수정**: 리포트 카드 썸네일이 안 보이던 문제 — `_render_gallery`/`_render_photo_thumb`에서 `image_url`을 `api_client.build_image_url()`로 한 번 더 감싸 방어적으로 절대 URL 보장(멱등 함수라 안전). `streamlit.testing.v1.AppTest`로 실제 백엔드 데이터를 주입해 렌더링 검증(신규 `test_image_rendering.py`, 3개 테스트).
+- **신규 기능**: 리포트 카드(베스트컷/최고단체사진/최다재촬영/최다등장인물)에 "🔍 크게 보기" 버튼 추가 → `st.dialog` 모달로 원본 화질 사진 표시. 갤러리 탭 사진에도 동일 버튼 추가.
+- **버그 수정**: 같은 사진 재업로드 시 3배로 쌓이던 문제 — 백엔드(`POST /api/upload`)에 콘텐츠 해시 기반 dedup 추가(원인/조치는 백엔드 쪽, `shared/AGENT1_STATUS.md` 참고).
+- **UI 전면 개편**: 화이트 미니멀 테마로 전환(`.streamlit/config.toml` 추가, 다크 퍼플 그라데이션 CSS 전부 교체). 본문 최대폭 제한 + 좌우 여백 확대(중앙 정렬), 하이라이트 카드를 전부 [1,1] 대칭 레이아웃으로 통일.
+- **성능**: 갤러리 그리드는 `?size=thumb`(백엔드 신규 옵션, 300px) 사용, "크게 보기"에서만 원본 화질 로드.
+- 기존 목업 제거/실 API 연동(Agent 2가 이미 완료한 부분)은 그대로 유지.
+
+## 마지막 갱신: 반복 3 (실 백엔드 연동 완료, Agent 2 작성분)
 
 ## 완료
 - [P0] 업로드 UI — 완료. `POST /api/upload` (포트 8001) 실제 연동. 20장 업로드 200 OK 검증
