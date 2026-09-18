@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+worktree-agent1-backend/data/
+*.egg-info/
+.pytest_cache/
