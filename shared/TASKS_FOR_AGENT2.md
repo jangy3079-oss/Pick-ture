@@ -32,6 +32,13 @@
 - 리포트: total_photos=20, selfie_count=11, food_count=4, landscape_count=5, blurry_count=5, eyes_closed_count=0, best_group_photo=null(그룹샷 없음), top_location={"place":"Malá Strana","count":10}
 - best_group_photo나 most_retaken이 null일 수 있으니 프론트에서 null 처리(카드 숨김) 꼭 확인해주세요 — CONTRACT.md에 이미 명시된 내용입니다.
 
+## 스키마 추가 (반복 2, P2 — 선택적으로 반영하면 됨, 필수 아님)
+`GET /api/report` 응답에 `most_photographed_person` 필드가 추가되었습니다 (CONTRACT.md에도 반영됨):
+```json
+"most_photographed_person": { "count": 5, "representative_photo_id": "string" }
+```
+`person` 카테고리 사진이 2장 미만이거나 동일 인물 반복 등장이 없으면 `null` — 다른 nullable 카드(top_location 등)와 동일하게 null이면 카드 숨기면 됩니다. 리포트 카드 UI가 이미 완료되어 있다면, 시간 될 때 이 카드 하나만 추가해주세요(필수는 아님, P2).
+
 ## 변경 이력
 - 반복 1: 최초 작성. git 초기화 알림 추가.
-- 반복 2: 백엔드 P0+P1 전체 완료. 포트 8001로 확정, 모든 엔드포인트 사용 가능 상태로 전환.
+- 반복 2: 백엔드 P0+P1 전체 완료. 포트 8001로 확정, 모든 엔드포인트 사용 가능 상태로 전환. P2 `most_photographed_person` 필드 추가.

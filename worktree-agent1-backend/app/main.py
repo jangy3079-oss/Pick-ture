@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from app import albums as albums_module
-from app import generate_post as generate_post_module
+from app import face_clustering, generate_post as generate_post_module
 from app import preprocessing, report as report_module
 from app import vision
 from app.exif_utils import extract_datetime_and_gps
@@ -138,7 +138,8 @@ def get_report(album_id: str) -> ReportOut:
     if album is None:
         raise HTTPException(status_code=400, detail="Unknown album_id")
     photos = store.photos_in_album(album_id)
-    return ReportOut(**report_module.build_report(photos))
+    most_photographed = face_clustering.find_most_photographed_person(photos)
+    return ReportOut(**report_module.build_report(photos, most_photographed))
 
 
 @app.post("/api/generate-post", response_model=GeneratePostResponse)

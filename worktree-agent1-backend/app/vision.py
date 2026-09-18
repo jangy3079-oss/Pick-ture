@@ -150,6 +150,40 @@ def analyze_faces(image_path: Path) -> tuple[int, dict | None]:
     return face_count, {"eyes_open": eyes_open, "smiling": smiling, "adjustment": adjustment}
 
 
+def detect_face_crops(image_path: Path) -> list[Image.Image]:
+    """Returns cropped PIL images for each detected face (used by P2 face
+    clustering — "가장 많이 찍힌 사람"). Reuses the same FaceDetector as
+    analyze_faces, just also returns crops instead of only the count."""
+    state = _load_once()
+    mp_image = mp.Image.create_from_file(str(image_path))
+    detection_result = state["face_detector"].detect(mp_image)
+
+    full_image = Image.open(image_path).convert("RGB")
+    crops = []
+    for detection in detection_result.detections:
+        box = detection.bounding_box
+        left, top = max(box.origin_x, 0), max(box.origin_y, 0)
+        right = min(box.origin_x + box.width, full_image.width)
+        bottom = min(box.origin_y + box.height, full_image.height)
+        if right > left and bottom > top:
+            crops.append(full_image.crop((left, top, right, bottom)))
+    return crops
+
+
+def embed_face_crop(face_crop: Image.Image) -> torch.Tensor:
+    """CLIP image embedding of a cropped face, used as a lightweight identity
+    proxy for face clustering (no dedicated face-recognition model is in the
+    pre-approved package list — CONTRACT.md 6-1 — so we reuse the CLIP model
+    already loaded for zero_shot_tags rather than adding a new dependency
+    mid-loop)."""
+    state = _load_once()
+    tensor = state["clip_preprocess"](face_crop).unsqueeze(0)
+    with torch.no_grad():
+        features = state["clip_model"].encode_image(tensor)
+        features /= features.norm(dim=-1, keepdim=True)
+    return features.squeeze(0)
+
+
 def aesthetic_score(image_path: Path) -> float:
     state = _load_once()
     image = Image.open(image_path).convert("RGB")

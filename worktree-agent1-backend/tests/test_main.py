@@ -158,7 +158,9 @@ def test_get_report_schema():
     assert set(body.keys()) == {
         "total_photos", "selfie_count", "food_count", "landscape_count",
         "blurry_count", "eyes_closed_count", "most_retaken", "best_shot",
-        "best_group_photo", "top_location",
+        "best_group_photo", "top_location", "most_photographed_person",
     }
     assert body["total_photos"] == 1
     assert body["best_shot"] == {"photo_id": "p1", "aesthetic_score": 9.2}
+    # only 1 photo in album -> no repeat-person clustering possible
+    assert body["most_photographed_person"] is None

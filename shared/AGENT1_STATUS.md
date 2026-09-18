@@ -16,8 +16,10 @@
 ## 최종 API 상태 (포트 8001 — 8000 아님, 아래 "해결한 이슈" 참고)
 POST /api/upload, GET /api/albums, GET /api/photos, GET /api/photos/{photo_id}, GET /api/photos/{photo_id}/image, GET /api/report, POST /api/generate-post — 전부 구현 및 실동작 검증 완료. `worktree-agent1-backend/tests/` 27개 유닛테스트 전체 통과.
 
+- [P2] 얼굴 클러스터링("가장 많이 찍힌 사람") — 완료. 전용 얼굴인식 모델 없이 기존 CLIP 임베딩을 얼굴 크롭에 재사용하는 근사 방식으로 구현(정확도는 완벽하지 않을 수 있음, 코드 주석에 명시). `GET /api/report`에 `most_photographed_person` 필드 추가(nullable, 가산적 변경) — CONTRACT.md와 TASKS_FOR_AGENT2.md에 반영. 실사진 업로드로 확인: count=3.
+
 ## 진행 중 / 실패
-- [P2] 얼굴 클러스터링("가장 많이 찍힌 사람") — 아직 시작 전, 시간 남으면 진행
+- (없음 — PLAN.md 작업 목록 전체 완료: P0 1~5, P1 6~7, P2 8)
 
 ## 해결한 이슈
 - **mediapipe 1.0.1이 이 macOS(arm64) 환경에서 얼굴 검출/랜드마커 호출 시 무조건 크래시함** (`Check failed: service_ Service is unavailable.` in DrishtiMetalHelper, delegate=CPU를 명시해도 재현됨 — TensorsToDetectionsCalculator가 delegate 설정과 무관하게 Metal GPU 헬퍼를 초기화하려다 실패, abort()라서 Python에서 catch 불가). WebSearch로 확인한 known issue(google-ai-edge/mediapipe #6356)의 권장 조치대로 `pip install mediapipe==0.10.35`로 다운그레이드하여 해결함. `.venv`에 이미 설치되어 있던 1.0.1은 이 환경에서 사실상 못 쓰는 버전이었음 — CONTRACT.md 6-1의 사전 설치 패키지 목록에 버전 고정이 없었던 것이 원인. 이후 누군가 `pip install mediapipe`로 재설치하면 다시 깨질 수 있으니 주의.

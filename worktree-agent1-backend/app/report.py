@@ -19,7 +19,7 @@ def _argmax_tag(photo: PhotoRecord) -> Optional[str]:
     return max(photo.zero_shot_tags.items(), key=lambda kv: kv[1])[0]
 
 
-def build_report(photos: list[PhotoRecord]) -> dict:
+def build_report(photos: list[PhotoRecord], most_photographed_person: Optional[dict] = None) -> dict:
     total_photos = len(photos)
     selfie_count = sum(1 for p in photos if _argmax_tag(p) == "selfie")
     food_count = sum(1 for p in photos if _argmax_tag(p) == "food")
@@ -74,4 +74,5 @@ def build_report(photos: list[PhotoRecord]) -> dict:
         "best_shot": best_shot,
         "best_group_photo": best_group_photo,
         "top_location": top_location,
+        "most_photographed_person": most_photographed_person,
     }

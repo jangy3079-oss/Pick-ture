@@ -121,9 +121,12 @@ repo/
   },
   "best_shot": { "photo_id": "string", "aesthetic_score": 9.2 },
   "best_group_photo": { "photo_id": "string", "aesthetic_score": 8.5, "face_count": 5 },
-  "top_location": null
+  "top_location": null,
+  "most_photographed_person": { "count": 5, "representative_photo_id": "string" }
 }
 ```
+
+**`most_photographed_person` (반복 2, Agent 1 추가 — PLAN.md P2 작업)**: 앨범 내에서 가장 많은 사진에 등장한 인물(얼굴 클러스터링 기반). `person` 카테고리 사진이 2장 미만이거나, 동일 인물로 클러스터링된 사진이 2장 미만이면(즉 "반복 등장"이 없으면) `null`. 얼굴 임베딩은 전용 얼굴인식 모델이 아니라 이미 로드된 CLIP 모델을 재사용한 근사치라 정확도가 완벽하지 않을 수 있음(P2, nice-to-have). 프론트는 다른 nullable 필드와 동일하게 null이면 카드를 숨기면 됨.
 
 `top_location`은 EXIF GPS 데이터가 있을 때만 값이 채워짐(`{ "place": "string", "count": 74 }`), 없으면 `null` — 프론트는 null일 때 해당 카드를 숨긴다. `place`는 3-1 국가별 재분류 과정에서 이미 계산해둔 도시 단위 지명(reverse-geocode의 `city`)을 그대로 재사용한다 — 별도 계산 불필요.
 

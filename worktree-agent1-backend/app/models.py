@@ -66,6 +66,14 @@ class TopLocation(BaseModel):
     count: int
 
 
+class MostPhotographedPerson(BaseModel):
+    """P2 addition (not in original CONTRACT.md schema) — see
+    app/face_clustering.py and CONTRACT.md changelog."""
+
+    count: int
+    representative_photo_id: str
+
+
 class ReportOut(BaseModel):
     total_photos: int
     selfie_count: int
@@ -77,6 +85,7 @@ class ReportOut(BaseModel):
     best_shot: Optional[BestShot] = None
     best_group_photo: Optional[BestGroupPhoto] = None
     top_location: Optional[TopLocation] = None
+    most_photographed_person: Optional[MostPhotographedPerson] = None
 
 
 class GeneratePostRequest(BaseModel):
