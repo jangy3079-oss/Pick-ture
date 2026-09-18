@@ -38,3 +38,24 @@ repo/
 - `dataset/` 폴더에 테스트용 실제 사진 20장 있음 (EXIF/GPS 포함 여부 미확인 상태로 시작 — 파이프라인 테스트에 사용 예정)
 
 이 아래로는 작업 진행 중 발견되는 개별 이슈를 추가합니다.
+
+---
+
+## [Agent 2 추가] 반복 1 완료 후 확인 사항
+
+### ✅ Agent 2 반복 1 완료 (P0+P1 전체)
+- 업로드 UI, 앨범 선택 UI, 베스트컷 랭킹, 리포트 카드, 후기 글 생성 — 모두 구현 완료
+- 백엔드 미연결 상태에서 목업 데이터로 자동 폴백, 백엔드 준비되면 코드 수정 없이 자동 전환
+- 29개 유닛테스트 전체 통과
+- Streamlit 앱 실행 중: http://localhost:8501
+
+### ⚠️ 사람 확인 필요: ANTHROPIC_MODEL 이름
+- `.env`에 `ANTHROPIC_MODEL=claude-sonnet-5`로 설정되어 있음
+- 현재 Anthropic 모델명 형식은 `claude-3-5-sonnet-20241022` 또는 `claude-sonnet-4-5`임
+- `claude-sonnet-5`는 미출시/오타 가능성 있음 → `POST /api/generate-post` 에서 API 에러 발생할 수 있음
+- 권장: 올바른 모델명으로 `.env` 수정 (예: `ANTHROPIC_MODEL=claude-3-5-sonnet-20241022`)
+
+### ℹ️ 백엔드 라우터 미구현 상태
+- `worktree-agent1-backend/app/`에 models.py, preprocessing.py, storage.py, exif_utils.py는 있으나 FastAPI 라우터(`main.py`) 없음
+- 현재 프론트엔드는 정상 목업으로 동작 중. 백엔드 라우터 완성 시 자동 연결됨
+- `GET /api/photos?album_id=xxx` 구현 시 반드시 **배열 반환** 형태로 (CONTRACT.md 3장 \"GET /api/photos\" 참고)
