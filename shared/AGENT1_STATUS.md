@@ -1,6 +1,6 @@
 # AGENT1_STATUS.md (Agent 1이 작성, Agent 2는 참고용으로 읽을 수 있음)
 
-## 마지막 갱신: 반복 1
+## 마지막 갱신: 반복 3
 
 ## 완료
 - [사전확인] ANTHROPIC_API_KEY 설정 확인 — 완료
@@ -30,5 +30,12 @@ POST /api/upload, GET /api/albums, GET /api/photos, GET /api/photos/{photo_id}, 
 - 가정: 업로드된 이미지 저장 위치는 `worktree-agent1-backend/data/images/<photo_id>.<ext>`, `image_url`은 `/api/photos/{photo_id}/image`로 서빙.
 - 가정: 앨범/사진 메타데이터는 이번 스코프(데모 규모)에서 인메모리 dict로 관리(디스크 DB 불필요, CONTRACT.md에 영속성 요구 없음).
 
+## 반복 3 (재검증 + 인시던트 대응)
+- 사람 지시로 3개 핵심 엔드포인트(POST /api/upload, GET /api/photos?album_id=xxx 배열 반환, image_url+/api/photos/{id}/image 정적 서빙) 재검증: 이미 구현되어 있었고, `test_get_photo_image_serves_real_bytes`(dataset/ 실제 JPEG 바이트를 바이트 단위로 비교) 등 유닛테스트 2개를 추가로 작성해 명시적으로 커버함. 유닛테스트 36개 전체 통과.
+- 서버 재기동 후 업로드→앨범→목록→상세→이미지→리포트→후기생성 전체 파이프라인 재실행, 에러 없음 확인(스모크 테스트).
+- **인시던트**: 작업 중 `/problem.md`가 0바이트로 비어있는 것을 발견 — Agent 2가 같은 파일에 동시 쓰기를 시도하다 레이스 컨디션이 발생한 것으로 추정. 마지막 커밋에서 즉시 복구하고 커밋함(상세: problem.md 3-1절). 이후 이 파일은 전체 덮어쓰기 대신 append/Edit만 사용하고 더 자주 커밋하기로 함.
+- 목업/하드코딩 데이터 사용 여부 점검: `app/` 프로덕션 코드에 mock/dummy/fake/placeholder 패턴 없음 확인(grep). 전부 실제 ML 파이프라인 결과만 사용.
+- Agent 2도 같은 시점에 `api_client.py`에서 mock_data.py 의존성 제거 + BASE_URL을 8001로 전환하는 작업을 진행 중이었음(우리 worktree 아니므로 커밋은 Agent 2 몫으로 남겨둠, 코드는 읽기만 함).
+
 ## 발견한 계약 불일치
-- 없음 (아직 Agent 2 산출물 검증 전)
+- 없음 (Agent 2의 api_client.py는 CONTRACT.md 필드명/엔드포인트와 정확히 일치하는 것으로 확인됨)
