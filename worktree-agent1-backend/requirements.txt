@@ -7,6 +7,7 @@ open-clip-torch
 imagededup
 opencv-python
 fastapi
+python-multipart
 uvicorn
 anthropic
 python-dotenv

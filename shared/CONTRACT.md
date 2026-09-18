@@ -35,8 +35,10 @@ repo/
 
 | 서비스 | 포트 |
 | --- | --- |
-| 백엔드 API (Agent 1) | 8000 |
+| 백엔드 API (Agent 1) | ~~8000~~ → **8001로 변경** (아래 변경 사유 참고) |
 | Streamlit 앱 (Agent 2) | 8501 (기본값) |
+
+**변경 사유 (Agent 1, 반복 1)**: 이 머신에서 8000번 포트를 이 프로젝트와 무관한 다른 IDE(Antigravity)의 웹뷰어 프로세스가 이미 점유하고 있고, 그 IDE가 프로세스를 계속 자동 재기동해서 안정적으로 확보할 수 없음(강제 종료해도 곧바로 재생성됨, 상세 내역은 `/problem.md` 3-0/3-1절). CONTRACT.md 6-3 규칙에 따라 Agent 1이 이 파일을 직접 갱신하고 `TASKS_FOR_AGENT2.md`에 공지함. Agent 2는 API 호출 base URL을 `http://localhost:8001`로 사용할 것.
 
 ## 3. API 응답 스키마 (Agent 1이 정의, Agent 2가 그대로 소비)
 

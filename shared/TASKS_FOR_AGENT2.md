@@ -1,23 +1,37 @@
 # TASKS_FOR_AGENT2.md (Agent 1이 작성/갱신, Agent 2는 읽기 전용)
 
-## 지금 확정된 API
-- (아직 구현된 엔드포인트 없음 — 백엔드 작업 시작 단계)
-- `GET /api/albums`, `GET /api/photos/{photo_id}` 구현 완료 시 즉시 이 파일을 갱신하고 "변경 이력"에 기록함
+## 지금 확정된 API — 전부 구현 완료, 실사진으로 실동작 검증됨
+**Base URL: `http://localhost:8001`** (8000 아님 — 아래 "중요 알림" 참고)
+
+- `POST /api/upload` — multipart, 필드명 `photos` (다중 파일)
+- `GET /api/albums`
+- `GET /api/photos?album_id=xxx` — 배열 반환
+- `GET /api/photos/{photo_id}`
+- `GET /api/photos/{photo_id}/image` — 실제 이미지 바이트(Content-Type: image/jpeg 등), `st.image()`에 그대로 사용 가능
+- `GET /api/report?album_id=xxx` — album_id 없으면 400
+- `POST /api/generate-post` — `{style, report, best_shot_ids}` 요청, `{text}` 응답. 실제 Claude API 호출로 한국어 블로그 후기 생성 확인됨(style=instagram도 지원)
+
+전부 CONTRACT.md 3장 스키마 그대로(snake_case, 필드명 동일). 지금부터 목업 대신 실제 백엔드를 호출해도 됩니다.
 
 ## 중요 알림
+- **🚨 백엔드 포트 변경: 8000 → 8001.** 이 머신에서 8000번은 무관한 다른 IDE(Antigravity)의 웹뷰어가 이미 점유 중이고 자동으로 계속 재기동되어 확보 불가능함을 확인했습니다(`/problem.md` 3-0/3-1절, `shared/CONTRACT.md` 2장에도 반영함). **api_client.py의 base URL을 `http://localhost:8001`로 바꿔주세요.**
 - **ANTHROPIC_MODEL 오타 아님**: `.env`의 `ANTHROPIC_MODEL=claude-sonnet-5`는 정정할 필요 없습니다. `claude-sonnet-5`는 실제 유효한 최신 모델 ID입니다(Claude 5 패밀리). AGENT2_STATUS.md에 남긴 의심은 오탐이니 수정하지 마세요. 자세한 내용은 `/problem.md` 3절 참고.
-- **git 저장소가 초기화되었습니다** (`/Users/mac/Loopcoding`가 이제 git repo root). AGENT2_STATUS.md에 남긴 "git 초기화 안 되어 있으면 파일 기록으로 대체"라는 가정은 더 이상 유효하지 않습니다 — 지금부터는 `git add`/`git commit`으로 결과를 남겨주세요 (`git stash` 금지, CONTRACT.md 6-3).
+- **git 저장소가 초기화되었습니다** (`/Users/mac/Loopcoding`가 이제 git repo root). 지금부터는 `git add`/`git commit`으로 결과를 남겨주세요 (`git stash` 금지, CONTRACT.md 6-3).
 - 폴더 구조(`shared/`, `worktree-agent1-backend/`, `worktree-agent2-frontend/`)는 Agent 1과 Agent 2가 독립적으로 동일하게 CONTRACT.md 1절대로 만들어서 충돌 없이 수렴했습니다. 계속 이 구조를 유지해주세요.
+- 백엔드 서버가 지금 `localhost:8001`에서 계속 실행 중입니다(제 세션에서 백그라운드로 띄워둠). 재시작이 필요하면 `cd worktree-agent1-backend && <repo venv>/bin/uvicorn app.main:app --port 8001`.
 
-## 우선순위
-1. [P0] 업로드 UI (다중 파일 선택) — 계속 진행
-2. [P0] 앨범 선택 UI — GET /api/albums 호출, 앨범이 2개 이상이면 선택 UI, 1개면 자동 선택 — 목업으로 먼저 진행, 백엔드 완료되면 재공지
-3. [P0] 베스트컷 랭킹 화면 — 선택된 album_id로 필터링된 GET /api/photos/{photo_id} 응답을 aesthetic_score 기준 정렬 표시 — 목업으로 먼저 진행
-4. [P1] 리포트 카드 UI — GET /api/report?album_id=... 는 아직 미구현, 목업 데이터로 먼저 화면만 만들어둘 것
-5. [P1] 후기 글 생성 UI — POST /api/generate-post 완료되면 다시 공지
+## 우선순위 (목업 → 실 API 전환)
+1. [P0] 업로드 UI — `POST /api/upload`로 전환 가능
+2. [P0] 앨범 선택 UI — `GET /api/albums`로 전환 가능 (앨범 1개면 자동 선택 로직 유지)
+3. [P0] 베스트컷 랭킹 화면 — `GET /api/photos?album_id=...`로 전환 가능 (album_id로 필터링된 배열이 바로 옴, photo_id 미리 몰라도 됨)
+4. [P1] 리포트 카드 UI — `GET /api/report?album_id=...`로 전환 가능
+5. [P1] 후기 글 생성 UI — `POST /api/generate-post`로 전환 가능
 
-## 백엔드 진행 상황 (참고용)
-- 포트 8000에서 FastAPI 서버 구현 시작. 아직 실행 가능한 엔드포인트 없음 — 목업 데이터 계속 사용할 것.
+## 검증 참고 (Agent 1이 실사진 20장으로 확인한 실제 응답 예시)
+- 앨범: 1개, country="Czech Republic", photo_count=20
+- 리포트: total_photos=20, selfie_count=11, food_count=4, landscape_count=5, blurry_count=5, eyes_closed_count=0, best_group_photo=null(그룹샷 없음), top_location={"place":"Malá Strana","count":10}
+- best_group_photo나 most_retaken이 null일 수 있으니 프론트에서 null 처리(카드 숨김) 꼭 확인해주세요 — CONTRACT.md에 이미 명시된 내용입니다.
 
 ## 변경 이력
 - 반복 1: 최초 작성. git 초기화 알림 추가.
+- 반복 2: 백엔드 P0+P1 전체 완료. 포트 8001로 확정, 모든 엔드포인트 사용 가능 상태로 전환.
