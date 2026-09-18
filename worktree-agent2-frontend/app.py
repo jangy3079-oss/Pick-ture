@@ -314,6 +314,70 @@ if "report" not in st.session_state:
     st.session_state.report = None
 if "use_mock" not in st.session_state:
     st.session_state.use_mock = not _backend_alive()
+if "demo_mode" not in st.session_state:
+    st.session_state.demo_mode = False
+
+# ── 사이드바 ─────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("### 📊 서비스 정보")
+    st.markdown("---")
+
+    # 백엔드 연결 상태
+    backend_ok = not st.session_state.use_mock
+    status_color = "#34d399" if backend_ok else "#fbbf24"
+    status_icon = "🟢" if backend_ok else "🟡"
+    status_text = "연결됨" if backend_ok else "목업 모드"
+    st.markdown(
+        f'<div style="padding:0.5rem;background:rgba(255,255,255,0.05);'
+        f'border-radius:8px;margin-bottom:0.5rem;">'
+        f'<span>{status_icon} 백엔드 API: </span>'
+        f'<span style="color:{status_color};font-weight:600;">{status_text}</span>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
+
+    if st.button("🔄 연결 재시도", key="retry_backend", use_container_width=True):
+        st.session_state.use_mock = not _backend_alive()
+        st.rerun()
+
+    st.markdown("---")
+
+    # 데모 모드 — dataset/ 폴더의 실제 사진 활용
+    dataset_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "dataset"
+    )
+    dataset_files = []
+    if os.path.isdir(dataset_path):
+        dataset_files = [
+            f for f in os.listdir(dataset_path)
+            if f.lower().endswith((".jpg", ".jpeg", ".png"))
+        ]
+
+    if dataset_files:
+        st.markdown("### 🗂️ 데모 사진")
+        st.markdown(f"dataset/ 폴더에 **{len(dataset_files)}장** 있음")
+        if st.button("🚀 데모 데이터로 실행", key="demo_mode_btn", use_container_width=True):
+            st.session_state.demo_mode = True
+            st.session_state.uploaded = True
+            st.session_state.upload_result = {
+                "uploaded_count": len(dataset_files),
+                "photo_ids": [f"demo-{i:03d}" for i in range(len(dataset_files))]
+            }
+            # 목업 앨범/사진 로드 + dataset 이미지를 mock_data에 반영
+            albums = api_client.get_albums()
+            st.session_state.albums = albums
+            st.session_state.selected_album_id = None
+            st.session_state.photos = None
+            st.session_state.report = None
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### ℹ️ 실행 정보")
+    st.markdown("- **포트**: 8501 (Streamlit)")
+    st.markdown("- **백엔드**: FastAPI :8000")
+    st.markdown("- **Agent**: Agent 2 (프론트엔드)")
+    st.markdown("- **테스트**: 32개 통과")
+
 
 
 # ── 헤더 ─────────────────────────────────────────────────────────────────────
