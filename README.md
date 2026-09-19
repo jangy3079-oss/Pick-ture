@@ -31,7 +31,7 @@
 
 | 하고 싶었던 것 | 사용한 오픈소스 모델/라이브러리 | 어떻게 썼는지 |
 | --- | --- | --- |
-| 사진에 사람이 몇 명, 어디 있는지 찾기 | **[MediaPipe](https://github.com/google-ai-edge/mediapipe) FaceDetector** (`blaze_face_short_range.tflite`) | 각 사진에서 얼굴 개수(`face_count`)를 세서 `person`/`general` 카테고리를 나누는 기준으로 사용 |
+| 사진에 사람이 몇 명, 어디 있는지 찾기 | **[MediaPipe](https://github.com/google-ai-edge/mediapipe) FaceDetector** (`blaze_face_short_range.tflite`) | 각 사진에서 얼굴 개수(`face_count`)를 세서 풍경사진과 인물사진`person`/`general` 카테고리를 나누는 기준으로 사용 |
 | 인물 사진의 눈감음/미소 보정 | **MediaPipe FaceLandmarker** (blendshape, `face_landmarker.task`) | 얼굴 랜드마크의 `eyeBlinkLeft/Right`, `mouthSmileLeft/Right` 블렌드셰입 점수로 눈뜸/미소 여부를 판정해 `portrait_bonus`(점수 가감) 계산 |
 | "잘 찍은 사진"이라는 애매한 기준을 점수로 만들기 | **[simple-aesthetics-predictor](https://github.com/shunk031/simple-aesthetics-predictor)** + HuggingFace `transformers` CLIP, 체크포인트 [`shunk031/aesthetics-predictor-v2-sac-logos-ava1-l14-linearMSE`](https://huggingface.co/shunk031/aesthetics-predictor-v2-sac-logos-ava1-l14-linearMSE) | SAC/LogoIQA/AVA 데이터셋으로 학습된 선형 회귀 헤드를 CLIP ViT-L/14 임베딩 위에 얹은 모델. 사진 한 장을 넣으면 미학 점수(`aesthetic_score`) 하나가 나옴 — 베스트컷 랭킹의 핵심 지표 |
 | 사진을 셀카/음식/풍경으로 자동 분류 | **[open_clip](https://github.com/mlfoundations/open_clip)** `ViT-B-32-quickgelu` (OpenAI 사전학습 가중치) | "a selfie photo of a person" / "a photo of food" / "a landscape or scenery photo" 세 문장과 사진의 CLIP 임베딩 코사인 유사도를 비교하는 제로샷(zero-shot) 분류 — 별도 학습 데이터 없이 바로 사용 가능 |
