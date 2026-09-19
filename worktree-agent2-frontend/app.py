@@ -1,7 +1,7 @@
 """
-app.py — 여행 사진 베스트컷 서비스 (Agent 2, Streamlit)
-실행: streamlit run app.py  →  http://localhost:8501
-백엔드: http://localhost:8001 (Agent 1, FastAPI)
+app.py — 여행 사진 베스트컷 서비스 (Streamlit)
+실행: streamlit run app.py  →  http://localhost:<port> (기본 8501)
+백엔드 주소는 api_client.BASE_URL 하나로만 관리한다 (UI 텍스트에 직접 박아넣지 않음).
 
 CONTRACT.md 준수:
 - 목업/하드코딩 없음, 실 백엔드만 사용
@@ -17,6 +17,9 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 import api_client
 import utils
+
+# Streamlit 자체 포트는 실행 옵션에서 읽어옴 (UI 텍스트에 하드코딩하지 않기 위함)
+PORT = st.get_option("server.port") or 8501
 
 # ── 페이지 설정 ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -320,18 +323,18 @@ with st.sidebar:
     st.markdown("### 📊 서비스 정보")
     st.markdown("---")
     alive = st.session_state.backend_alive
-    color, icon, label = ("#15803D", "🟢", "연결됨 (:8001)") if alive else ("#B91C1C", "🔴", "연결 안 됨 (:8001)")
+    color, icon, status_text = ("#15803D", "🟢", "연결됨") if alive else ("#B91C1C", "🔴", "연결 안 됨")
     st.markdown(
         f'<div style="padding:0.5rem;background:#FAFAFA;border:1px solid #E5E7EB;border-radius:8px;">'
-        f'{icon} 백엔드: <span style="color:{color};font-weight:600;">{label}</span></div>',
+        f'{icon} 백엔드: <span style="color:{color};font-weight:600;">{status_text} ({api_client.BASE_URL})</span></div>',
         unsafe_allow_html=True
     )
     if st.button("🔄 연결 재시도", key="retry_backend", use_container_width=True):
         st.session_state.backend_alive = api_client.is_backend_alive()
         st.rerun()
     st.markdown("---")
-    st.markdown("**포트** 8501 (Streamlit)")
-    st.markdown("**백엔드** FastAPI :8001")
+    st.markdown(f"**Streamlit** :{PORT}")
+    st.markdown(f"**백엔드** FastAPI ({api_client.BASE_URL})")
     if st.session_state.last_error:
         st.markdown("---")
         st.error(st.session_state.last_error)
@@ -347,13 +350,13 @@ st.markdown("""
 
 if not st.session_state.backend_alive:
     st.markdown(
-        '<div class="status-err">🔴 백엔드 서버(http://localhost:8001)에 연결할 수 없습니다.'
+        f'<div class="status-err">🔴 백엔드 서버({api_client.BASE_URL})에 연결할 수 없습니다.'
         ' 사이드바의 [연결 재시도] 버튼을 눌러 다시 시도하세요.</div>',
         unsafe_allow_html=True
     )
     st.stop()
 
-st.markdown('<div class="status-ok">✅ 백엔드 서버 연결됨 (http://localhost:8001)</div>',
+st.markdown(f'<div class="status-ok">✅ 백엔드 서버 연결됨 ({api_client.BASE_URL})</div>',
             unsafe_allow_html=True)
 st.markdown("---")
 
@@ -655,7 +658,7 @@ if st.session_state.report and st.session_state.selected_album_id:
 st.markdown("---")
 st.markdown(
     '<div style="text-align:center;color:#9CA3AF;font-size:0.78rem;padding:0.8rem;">'
-    '여행 베스트컷 AI · Streamlit :8501 · FastAPI :8001'
+    f'여행 베스트컷 AI · Streamlit :{PORT} · FastAPI ({api_client.BASE_URL})'
     '</div>',
     unsafe_allow_html=True
 )

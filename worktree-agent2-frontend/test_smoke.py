@@ -62,6 +62,29 @@ class TestAppSmoke:
         assert any("분석" in label for label in button_labels), \
             f"분석 버튼 없음. 버튼 목록: {button_labels}"
 
+    def test_backend_url_text_is_not_hardcoded(self):
+        """사이드바/상태배너/푸터의 백엔드 주소 표시가 api_client.BASE_URL을
+        그대로 반영하는지 확인 — 2026-09-19 하드코딩 버그(포트 번호가 UI 문자열에
+        직접 박혀 있어 BASE_URL이 바뀌어도 안 따라가던 문제) 재발 방지."""
+        try:
+            from streamlit.testing.v1 import AppTest
+        except ImportError:
+            pytest.skip("streamlit.testing.v1 사용 불가")
+
+        import api_client
+
+        app_path = os.path.join(os.path.dirname(__file__), "app.py")
+        at = AppTest.from_file(app_path, default_timeout=30)
+        at.session_state["backend_alive"] = True
+        at.run()
+
+        assert not at.exception
+        all_markdown = " ".join(m.value for m in at.markdown)
+        assert api_client.BASE_URL in all_markdown, (
+            "백엔드 주소가 화면 어디에도 api_client.BASE_URL 값으로 표시되지 않음 "
+            "— 하드코딩된 문자열로 되돌아갔을 수 있음"
+        )
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
