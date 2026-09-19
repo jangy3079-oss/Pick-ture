@@ -86,11 +86,21 @@ def get_portrait_status(photo: dict) -> str:
     return " · ".join(parts) if parts else ""
 
 
-def get_dominant_tag(zero_shot_tags: dict) -> str:
-    """가장 높은 점수의 제로샷 태그 반환."""
+def get_dominant_tag(zero_shot_tags: dict, face_count: Optional[int] = None) -> str:
+    """가장 높은 점수의 제로샷 태그 반환.
+
+    face_count=0이 명시되면 'selfie' 태그는 후보에서 제외한다 (2026-09-19,
+    사람이 보고: 얼굴이 없는 건축물/풍경 사진이 CLIP 제로샷 오분류로 셀카로
+    표시되던 문제 — 백엔드 app/report.py의 동일 수정과 짝을 맞춘 것).
+    face_count를 안 넘기면(None) 기존과 동일하게 동작한다.
+    """
     if not zero_shot_tags:
         return ""
-    tag = max(zero_shot_tags, key=lambda k: zero_shot_tags[k])
-    score = zero_shot_tags[tag]
+    candidates = zero_shot_tags
+    if face_count == 0:
+        candidates = {k: v for k, v in candidates.items() if k != "selfie"}
+        if not candidates:
+            return ""
+    tag = max(candidates, key=lambda k: candidates[k])
     labels = {"selfie": "셀카", "food": "음식", "landscape": "풍경"}
     return labels.get(tag, tag)

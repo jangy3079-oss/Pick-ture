@@ -4,6 +4,15 @@ Assumption (not specified in CONTRACT.md): selfie/food/landscape counts use the
 argmax of each photo's zero_shot_tags dict (the category CLIP considers most
 likely), not a fixed probability threshold — simplest rule consistent with
 "CLIP 제로샷" classification and avoids an arbitrary threshold choice.
+
+Fix (2026-09-19, human-reported): CLIP's 3-way zero-shot vote has no "none of
+these" option, so on ambiguous architecture/landscape photos it sometimes
+picks "selfie" with a weak margin (e.g. 51% vs 38%) even when mediapipe found
+zero faces in the photo — verified against dataset/IMG_9322.jpeg (a Prague
+Castle gate with no people, tagged selfie=0.51). A selfie is a photo of
+oneself, which requires at least one face by definition, so "selfie" is
+excluded from the argmax vote whenever face_count == 0; the tag then falls
+back to the winner of food vs. landscape.
 """
 from __future__ import annotations
 
@@ -16,7 +25,12 @@ from app.storage import PhotoRecord
 def _argmax_tag(photo: PhotoRecord) -> Optional[str]:
     if not photo.zero_shot_tags:
         return None
-    return max(photo.zero_shot_tags.items(), key=lambda kv: kv[1])[0]
+    candidates = photo.zero_shot_tags
+    if photo.face_count == 0:
+        candidates = {k: v for k, v in candidates.items() if k != "selfie"}
+        if not candidates:
+            return None
+    return max(candidates.items(), key=lambda kv: kv[1])[0]
 
 
 def build_report(photos: list[PhotoRecord], most_photographed_person: Optional[dict] = None) -> dict:

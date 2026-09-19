@@ -28,7 +28,7 @@ def test_empty_album_report():
 
 def test_category_counts_use_argmax_tag():
     photos = [
-        _photo("selfie1", zero_shot_tags={"selfie": 0.9, "food": 0.05, "landscape": 0.05}),
+        _photo("selfie1", face_count=1, zero_shot_tags={"selfie": 0.9, "food": 0.05, "landscape": 0.05}),
         _photo("food1", zero_shot_tags={"selfie": 0.1, "food": 0.8, "landscape": 0.1}),
         _photo("land1", zero_shot_tags={"selfie": 0.2, "food": 0.2, "landscape": 0.6}),
     ]
@@ -36,6 +36,29 @@ def test_category_counts_use_argmax_tag():
     assert r["selfie_count"] == 1
     assert r["food_count"] == 1
     assert r["landscape_count"] == 1
+
+
+def test_selfie_tag_requires_at_least_one_face():
+    """Human-reported bug (2026-09-19): CLIP zero-shot sometimes tags a
+    faceless architecture/landscape photo as 'selfie' with a weak margin.
+    A selfie requires a face by definition, so face_count == 0 must exclude
+    the selfie vote, falling back to food vs. landscape."""
+    faceless_but_selfie_tagged = _photo(
+        "gate", face_count=0,
+        zero_shot_tags={"selfie": 0.51, "food": 0.11, "landscape": 0.38},
+    )
+    r = build_report([faceless_but_selfie_tagged])
+    assert r["selfie_count"] == 0
+    assert r["landscape_count"] == 1
+
+
+def test_selfie_tag_counted_when_face_present():
+    real_selfie = _photo(
+        "selfie", face_count=1, category="person",
+        zero_shot_tags={"selfie": 0.99, "food": 0.005, "landscape": 0.005},
+    )
+    r = build_report([real_selfie])
+    assert r["selfie_count"] == 1
 
 
 def test_blurry_and_eyes_closed_counts():

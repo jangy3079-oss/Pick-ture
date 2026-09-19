@@ -240,9 +240,9 @@ def _render_gallery(photos: list, session_key: str):
                     st.markdown(PLACEHOLDER_HTML, unsafe_allow_html=True)
 
                 # 메타 태그
-                dominant = utils.get_dominant_tag(photo.get("zero_shot_tags", {}))
-                portrait_status = utils.get_portrait_status(photo)
                 face_count = photo.get("face_count", 0)
+                dominant = utils.get_dominant_tag(photo.get("zero_shot_tags", {}), face_count)
+                portrait_status = utils.get_portrait_status(photo)
                 meta_parts = []
                 if dominant:
                     meta_parts.append(dominant)

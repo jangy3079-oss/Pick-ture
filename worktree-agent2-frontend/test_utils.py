@@ -218,6 +218,19 @@ class TestGetDominantTag:
     def test_empty(self):
         assert get_dominant_tag({}) == ""
 
+    def test_face_count_zero_excludes_selfie(self):
+        """2026-09-19 사람 보고: 얼굴 없는 사진이 셀카로 잘못 표시되던 버그."""
+        tags = {"selfie": 0.51, "food": 0.11, "landscape": 0.38}
+        assert get_dominant_tag(tags, face_count=0) == "풍경"
+
+    def test_face_count_none_keeps_old_behavior(self):
+        tags = {"selfie": 0.51, "food": 0.11, "landscape": 0.38}
+        assert get_dominant_tag(tags) == "셀카"
+
+    def test_face_count_one_allows_selfie(self):
+        tags = {"selfie": 0.9, "food": 0.05, "landscape": 0.05}
+        assert get_dominant_tag(tags, face_count=1) == "셀카"
+
 
 # ── 앨범 수 조건 (1개 vs 여러 개) 확인용 헬퍼 ──────────────────────────────
 
