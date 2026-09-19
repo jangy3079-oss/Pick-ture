@@ -7,7 +7,7 @@
 이 저장소는 동시에 두 가지를 담고 있습니다.
 
 1. **서비스 자체**: FastAPI 백엔드(ML 파이프라인) + Streamlit 프론트엔드로 이루어진 실제 동작하는 앱
-2. **멀티 에이전트 협업 실험**: 두 개의 Claude Code 에이전트가 서로 대화 없이, 오직 파일(`shared/`)만으로 지휘·보고·문제공유를 하며 Pick!ture를 병렬로 만든 기록
+2. **멀티 에이전트 협업 실험**: 두 개의 에이전트(Claude Code, Antigravity)가 서로 대화 없이, 오직 파일(`shared/`)만으로 지휘·보고·문제공유를 하며 Pick!ture를 병렬로 만든 기록
 
 아래에서 아이디어, 사용한 오픈소스 ML/DL 모델, API 계약, 에이전트 협업 구조, 각 에이전트의 작업 계획, 문제 공유 워크플로우를 순서대로 설명합니다.
 
@@ -120,7 +120,7 @@ nullable 필드(`best_group_photo`, `top_location`, `most_photographed_person`, 
 
 ## 4. 병렬 에이전트 협업 구조
 
-Pick!ture는 **두 개의 Claude Code 에이전트**가 서로 다른 git worktree에서 동시에(사람 개입 없이 최대 2시간) 작업해서 만들어졌습니다.
+Pick!ture는 **두 개의 에이전트(Claude Code, Antigravity)**가 서로 다른 git worktree에서 동시에(사람 개입 없이 최대 2시간) 작업해서 만들어졌습니다.
 
 ```
 repo/ (git 저장소 루트, 이 README가 있는 곳)
