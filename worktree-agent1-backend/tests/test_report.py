@@ -38,11 +38,11 @@ def test_category_counts_use_argmax_tag():
     assert r["landscape_count"] == 1
 
 
-def test_selfie_tag_requires_at_least_one_face():
-    """Human-reported bug (2026-09-19): CLIP zero-shot sometimes tags a
-    faceless architecture/landscape photo as 'selfie' with a weak margin.
-    A selfie requires a face by definition, so face_count == 0 must exclude
-    the selfie vote, falling back to food vs. landscape."""
+def test_low_confidence_selfie_with_no_face_falls_back():
+    """Human-reported bug (2026-09-19): CLIP zero-shot weakly (51%) tagged a
+    faceless architecture photo as 'selfie'. A low-confidence selfie call
+    with no detected face is treated as CLIP being wrong -> falls back to
+    food vs. landscape."""
     faceless_but_selfie_tagged = _photo(
         "gate", face_count=0,
         zero_shot_tags={"selfie": 0.51, "food": 0.11, "landscape": 0.38},
@@ -50,6 +50,22 @@ def test_selfie_tag_requires_at_least_one_face():
     r = build_report([faceless_but_selfie_tagged])
     assert r["selfie_count"] == 0
     assert r["landscape_count"] == 1
+
+
+def test_high_confidence_selfie_with_no_face_is_trusted():
+    """Follow-up human-reported bug (same day): a genuine mirror selfie
+    (phone occluding part of the face) made mediapipe miss the face
+    (face_count == 0), but CLIP was ~99.6% confident it's a selfie. Excluding
+    selfie here left food/landscape to 'win' on near-zero noise (0.003 vs
+    0.001) - worse than trusting CLIP's near-certain read. High-confidence
+    selfie calls must NOT be excluded just because face_count == 0."""
+    mirror_selfie_missed_face = _photo(
+        "mirror", face_count=0,
+        zero_shot_tags={"selfie": 0.9956, "food": 0.0031, "landscape": 0.0014},
+    )
+    r = build_report([mirror_selfie_missed_face])
+    assert r["selfie_count"] == 1
+    assert r["food_count"] == 0
 
 
 def test_selfie_tag_counted_when_face_present():

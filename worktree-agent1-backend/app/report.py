@@ -9,10 +9,23 @@ Fix (2026-09-19, human-reported): CLIP's 3-way zero-shot vote has no "none of
 these" option, so on ambiguous architecture/landscape photos it sometimes
 picks "selfie" with a weak margin (e.g. 51% vs 38%) even when mediapipe found
 zero faces in the photo — verified against dataset/IMG_9322.jpeg (a Prague
-Castle gate with no people, tagged selfie=0.51). A selfie is a photo of
-oneself, which requires at least one face by definition, so "selfie" is
-excluded from the argmax vote whenever face_count == 0; the tag then falls
-back to the winner of food vs. landscape.
+Castle gate with no people, tagged selfie=0.51).
+
+Follow-up fix (same day): the first version of this fix excluded "selfie"
+outright whenever face_count == 0, which over-corrected — mediapipe misses
+faces on real selfies too (occluded by the phone, mirror selfies), e.g.
+dataset/IMG_9371.jpeg and dataset/IMG_9498.jpeg are genuine phone-in-hand
+mirror selfies where mediapipe found 0 faces but CLIP was ~99.6%/99.56%
+confident it's a selfie. Blindly excluding selfie there left food vs.
+landscape to "win" on near-zero, meaningless scores (e.g. food=0.003 vs
+landscape=0.001) — a worse answer than trusting CLIP's near-certain call.
+
+So the exclusion now only kicks in when face_count == 0 AND CLIP itself is
+NOT confident (selfie score < SELFIE_CONFIDENCE_FLOOR): a low-confidence
+selfie call with no detected face is probably CLIP being wrong (the gate
+photo case), while a near-certain selfie call with no detected face is
+probably mediapipe missing an occluded/angled face (the mirror selfie case)
+and CLIP's read is kept.
 """
 from __future__ import annotations
 
@@ -21,12 +34,14 @@ from typing import Optional
 
 from app.storage import PhotoRecord
 
+SELFIE_CONFIDENCE_FLOOR = 0.9
+
 
 def _argmax_tag(photo: PhotoRecord) -> Optional[str]:
     if not photo.zero_shot_tags:
         return None
     candidates = photo.zero_shot_tags
-    if photo.face_count == 0:
+    if photo.face_count == 0 and candidates.get("selfie", 0) < SELFIE_CONFIDENCE_FLOOR:
         candidates = {k: v for k, v in candidates.items() if k != "selfie"}
         if not candidates:
             return None

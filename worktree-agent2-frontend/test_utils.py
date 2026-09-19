@@ -218,10 +218,17 @@ class TestGetDominantTag:
     def test_empty(self):
         assert get_dominant_tag({}) == ""
 
-    def test_face_count_zero_excludes_selfie(self):
-        """2026-09-19 사람 보고: 얼굴 없는 사진이 셀카로 잘못 표시되던 버그."""
+    def test_face_count_zero_low_confidence_excludes_selfie(self):
+        """2026-09-19 사람 보고: 얼굴 없는 사진이 낮은 확신으로 셀카 오분류되던 버그."""
         tags = {"selfie": 0.51, "food": 0.11, "landscape": 0.38}
         assert get_dominant_tag(tags, face_count=0) == "풍경"
+
+    def test_face_count_zero_high_confidence_keeps_selfie(self):
+        """2026-09-19 후속 보고: 거울 셀카 등에서 mediapipe가 얼굴을 놓쳐도
+        CLIP이 90%+ 확신이면 selfie를 그대로 믿는다 (안 그러면 food/landscape가
+        0.3%/0.1% 같은 의미 없는 값으로 '승리'해버림)."""
+        tags = {"selfie": 0.9956, "food": 0.0031, "landscape": 0.0014}
+        assert get_dominant_tag(tags, face_count=0) == "셀카"
 
     def test_face_count_none_keeps_old_behavior(self):
         tags = {"selfie": 0.51, "food": 0.11, "landscape": 0.38}

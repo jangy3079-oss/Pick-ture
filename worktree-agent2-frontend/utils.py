@@ -86,18 +86,24 @@ def get_portrait_status(photo: dict) -> str:
     return " · ".join(parts) if parts else ""
 
 
+SELFIE_CONFIDENCE_FLOOR = 0.9
+
+
 def get_dominant_tag(zero_shot_tags: dict, face_count: Optional[int] = None) -> str:
     """가장 높은 점수의 제로샷 태그 반환.
 
-    face_count=0이 명시되면 'selfie' 태그는 후보에서 제외한다 (2026-09-19,
-    사람이 보고: 얼굴이 없는 건축물/풍경 사진이 CLIP 제로샷 오분류로 셀카로
-    표시되던 문제 — 백엔드 app/report.py의 동일 수정과 짝을 맞춘 것).
-    face_count를 안 넘기면(None) 기존과 동일하게 동작한다.
+    face_count=0이면서 selfie 점수가 낮으면(<0.9) 'selfie' 태그를 후보에서
+    제외한다 (2026-09-19, 사람이 보고: 얼굴 없는 건축물 사진이 낮은 확신으로
+    셀카 오분류되던 문제). 단, mediapipe가 얼굴을 놓친 실제 셀카(거울 셀카 등,
+    CLIP은 90%+ 확신)까지 배제하면 더 나쁜 결과가 나와서(음식/풍경이 0.3%
+    vs 0.1% 같은 무의미한 값으로 "승리") — selfie 점수가 높으면 face_count와
+    무관하게 그대로 믿는다. 백엔드 app/report.py의 동일 수정과 짝을 맞춤.
+    face_count를 안 넘기면(None) 게이팅 없이 기존과 동일하게 동작한다.
     """
     if not zero_shot_tags:
         return ""
     candidates = zero_shot_tags
-    if face_count == 0:
+    if face_count == 0 and candidates.get("selfie", 0) < SELFIE_CONFIDENCE_FLOOR:
         candidates = {k: v for k, v in candidates.items() if k != "selfie"}
         if not candidates:
             return ""
